@@ -1,3 +1,5 @@
+import random
+
 class TicTacToe:
     def __init__(self, cells="_" * 9):
         self.coords_map = {(1, 3): 0, (2, 3): 1, (3, 3): 2,
@@ -15,21 +17,13 @@ class TicTacToe:
 ---------
 """.format(*self.cells))
 
-    def switch_player(self):
-        self.state = "playO" if self.state == "playX" else "playX"
-    
     def handler(self, next_move):
         """ Handle input from program. next_move must be a list of numbers representing coordinates."""
-        #######################################  Removido solo para etapa 1.
-        # if self.state == "playX":
-        #     self.execute_move(next_move, "X")
-        # elif self.state == "playO":
-        #     self.execute_move(next_move, "O")
-        # self.print_field()
-        if self.cells.count("X") <= self.cells.count("O"):
+        if self.state == "playX":
             self.execute_move(next_move, "X")
-        else:
+        elif self.state == "playO":
             self.execute_move(next_move, "O")
+        self.print_field()
         self.check_condition()
         
     def execute_move(self, next_move, symbol):
@@ -43,8 +37,6 @@ class TicTacToe:
             else:
                 self.cells[self.coords_map[next_move]] = symbol
                 self.switch_player()
-                self.print_field()  # Agregado para etapa 1.
-                self.state = "exit" # Agregado para etapa 1.
         else:
             print("You should enter numbers!")
 
@@ -63,9 +55,12 @@ class TicTacToe:
         elif "_" not in cells_string: 
             print("Draw")
             self.state = "exit"
-        else:   # Agregado para etapa 1.
+        else:
             print("Game not finished")
 
+    def switch_player(self):
+        self.state = "playO" if self.state == "playX" else "playX"
+    
 game = TicTacToe(input("Enter cells: "))
 game.print_field()
 while game.state != "exit":
