@@ -20,14 +20,14 @@ class TicTacToe:
 """.format(*self.cells))
 
     def handler(self, next_move):
-        """ Handle input from program. next_move must be a list of two numbers representing coordinates."""
+        """ Handle input from program. next_move must be a list of two numbers as strings."""
         if self.state == "play":
             self.execute_move(next_move, self.next_player)
         self.print_field()
         self.check_condition()
         
     def execute_move(self, next_move, symbol):
-        """Update cells with next_move and symbol if valid and update player. Else, print error message."""
+        """Update cells with next_move and symbol if valid and update player. Else, print error message. next_move must be a list of two numbers as strings."""
         if all(value.isdigit() for value in next_move):
             next_move = tuple(int(value) for value in next_move)
             if next_move not in self.coords_map:
@@ -62,21 +62,26 @@ class TicTacToe:
         self.next_player = "O" if self.next_player == "X" else "X"
 
 
-class AIPlayer:
-    def __init__(self, difficulty="easy"):
+class Player:
+    available_difficulties = ["user", "loser", "easy"]
+
+    def __init__(self, difficulty):
         self.difficulty = difficulty
 
     def __repr__(self):
-        return f"AIPlayer({self.difficulty})"
+        return f"Player({self.difficulty})"
 
     def request_move(self, game):
-        """Return a tuple of two numbers that are a valid play position in game, based on difficulty."""
+        """Return a list of two numbers (as strings) that are a valid play position in game, based on difficulty."""
+        if self.difficulty == "user":
+            return input("Enter the coordinates: ").split()
+        print(f'Making move level "{self.difficulty}"')
         if self.difficulty == "loser":  # Will never play a winning move if possible. If not, will play a random valid move.
             no_win_moves = []
             for i, symbol in enumerate(game.cells):
                 if symbol == "_" and not self.check_win(game, i):
                     no_win_moves.append(i)
-            return random.choice([list(map(str, coords)) for coords in game.coords_map if game.coords_map[coords] in no_win_moves]) if no_win_moves else AIPlayer("easy").request_move(game)
+            return random.choice([list(map(str, coords)) for coords in game.coords_map if game.coords_map[coords] in no_win_moves]) if no_win_moves else Player("easy").request_move(game)
         if self.difficulty == "easy":  # Plays randomly.
             return random.choice([list(map(str, coords)) for coords in game.coords_map if game.cells[game.coords_map[coords]] == "_"])
 
@@ -86,12 +91,20 @@ class AIPlayer:
         straights = [cells_string[:3], cells_string[3:6], cells_string[6:], cells_string[::3], cells_string[1::3], cells_string[2::3], cells_string[::4], cells_string[2:7:2]]
         return "XXX" in straights or "OOO" in straights      
 
+
+def play(game, p1_diff, p2_diff):
+    p1, p2 = Player(p1_diff), Player(p2_diff)    
+    game.print_field()
+    while True:
+        game.handler(p1.request_move(game)) if game.next_player == "X" else game.handler(p2.request_move(game))
+        if game.state == "exit": break
+
+
 game = TicTacToe()
-npc = AIPlayer("easy")
-game.print_field()
 while True:
-    game.handler(input("Enter the coordinates: ").split())
-    if game.state == "exit": break
-    print(f'Making move level "{npc.difficulty}"')
-    game.handler(npc.request_move(game))
-    if game.state == "exit": break
+    command = input("Input command: ").split()
+    if command and command[0] == "exit": break
+    if len(command) == 3 and command[0] == "start" and all(word in Player.available_difficulties for word in command[1:]):
+        play(game, command[1], command[2])
+    else:
+        print("Bad parameters!")
