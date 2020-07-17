@@ -63,7 +63,7 @@ class TicTacToe:
 
 
 class Player:
-    available_difficulties = ["user", "loser", "easy"]
+    available_difficulties = ["user", "loser", "easy", "medium"]
 
     def __init__(self, difficulty):
         self.difficulty = difficulty
@@ -84,10 +84,26 @@ class Player:
             return random.choice([list(map(str, coords)) for coords in game.coords_map if game.coords_map[coords] in no_win_moves]) if no_win_moves else Player("easy").request_move(game)
         if self.difficulty == "easy":  # Plays randomly.
             return random.choice([list(map(str, coords)) for coords in game.coords_map if game.cells[game.coords_map[coords]] == "_"])
+        if self.difficulty == "medium":  # Plays a winning move if possible. Otherwise blocks the opposing player's move. Otherwise it plays randomly.
+            for i, symbol in enumerate(game.cells):
+                if symbol == "_" and self.check_win(game, i):
+                    for coords, ind in game.coords_map.items():
+                        if ind == i:
+                            return list(map(str, coords)) 
+            other_symbol = "O" if game.next_player == "X" else "X"
+            for i, symbol in enumerate(game.cells):
+                if symbol == "_" and self.check_win(game, i, other_symbol):
+                    for coords, ind in game.coords_map.items():
+                        if ind == i:
+                            return list(map(str, coords)) 
+            return Player("easy").request_move(game)
+            
 
-    def check_win(self, game, cell_index):
-        """Return True if placing next_player symbol in cell_index results in a win, else return False."""
-        cells_string = "".join(game.cells[:cell_index] + [game.next_player] + game.cells[cell_index + 1:])
+    def check_win(self, game, cell_index, symbol=None):
+        """Return True if placing symbol in cell_index results in a win, else return False. Symbol defaults to next_player symbol if not specified."""
+        if not symbol:
+            symbol = game.next_player
+        cells_string = "".join(game.cells[:cell_index] + [symbol] + game.cells[cell_index + 1:])
         straights = [cells_string[:3], cells_string[3:6], cells_string[6:], cells_string[::3], cells_string[1::3], cells_string[2::3], cells_string[::4], cells_string[2:7:2]]
         return "XXX" in straights or "OOO" in straights      
 
