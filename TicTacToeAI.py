@@ -138,16 +138,23 @@ class Player:
                 else:
                     new_game.switch_player()
                     moves.append((i, self.minimax(new_game, player_symbol)[1]))
-        best_move = moves[0]
+
+        win_moves, draw_moves, lose_moves = [move for move in moves if move[1] == 10], [move for move in moves if move[1] == 0], [move for move in moves if move[1] == -10]
+
         if game.next_player == player_symbol:
-            for move in moves:
-                if move[1] > best_move[1]:
-                    best_move = move
+            if win_moves:
+                return random.choice(win_moves)
+            elif draw_moves:
+                return random.choice(draw_moves)
+            else:
+                return random.choice(lose_moves)
         else:
-            for move in moves:
-                if move[1] < best_move[1]:
-                    best_move = move
-        return best_move
+            if lose_moves:
+                return random.choice(lose_moves)
+            elif draw_moves:
+                return random.choice(draw_moves)
+            else:
+                return random.choice(win_moves)
 
 
 def play(game, p1_diff, p2_diff):
