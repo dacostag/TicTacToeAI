@@ -77,8 +77,7 @@ class Player:
         if self.difficulty == "medium":  # Plays a winning move if possible or blocks the opposing player's move if it would result in a win. Otherwise it plays randomly.
             return self.medium_move(game)
         if self.difficulty == "hard":  # Plays the best move possible, based on the minimax algorithm.
-            MOVE = self.minimax(game, game.next_player)
-            return game.reverse_coords_map[MOVE[0]]
+            return game.reverse_coords_map[self.minimax(game, game.next_player)[0]]
 
     def user_move(self, game):
         while True:
