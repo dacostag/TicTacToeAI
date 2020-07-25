@@ -2,14 +2,14 @@ import random
 
 
 class TicTacToe:
-    def __init__(self, cells="_" * 9):
+    def __init__(self, cells="_" * 9, starting_player="X"):
         self.coords_map = {(1, 3): 0, (2, 3): 1, (3, 3): 2,
                            (1, 2): 3, (2, 2): 4, (3, 2): 5,
                            (1, 1): 6, (2, 1): 7, (3, 1): 8}
         self.reverse_coords_map = {v: k for k, v in self.coords_map.items()}
         self.cells = list(cells)
+        self.next_player = starting_player
         self.state = "play"
-        self.next_player = "X"
 
     def print_field(self):
         print("""
@@ -27,32 +27,34 @@ class TicTacToe:
             self.switch_player()
         self.print_field()
         self.check_condition()
+        self.print_condition()
         
     def execute_move(self, next_move, symbol):
         """Update cells with next_move and symbol. next_move must be a tuple of two integers."""
         self.cells[self.coords_map[next_move]] = symbol
 
     def check_condition(self):
-        """If the game is in any of the end conditions, print a message and change state to "exit"."""
+        """If the game is in any of the end conditions, update state to that end condition."""
         cells_string = "".join(self.cells)
         straights = [cells_string[:3], cells_string[3:6], cells_string[6:], cells_string[::3], cells_string[1::3], cells_string[2::3], cells_string[::4], cells_string[2:7:2]]
         if abs(cells_string.count("X") - cells_string.count("O")) > 1 or "XXX" in straights and "OOO" in straights:
-            print("Impossible")
-            self.state = "exit"
+            self.state = "Impossible"
         elif "XXX" in straights:
-            print("X wins")
-            self.state = "exit"
+            self.state = "X wins"
         elif "OOO" in straights:
-            print("O wins")
-            self.state = "exit"
+            self.state = "O wins"
         elif "_" not in cells_string: 
-            print("Draw")
-            self.state = "exit"
+            self.state = "Draw"
 
     def switch_player(self):
         """Change next move."""
         self.next_player = "O" if self.next_player == "X" else "X"
 
+    def print_condition(self):
+        """If the game is in any of the end conditions, print that condition and update state to 'exit'."""
+        if self.state in ("Impossible", "X wins", "O wins", "Draw"):
+            print(self.state) 
+            self.state = "exit"
 
 class Player:
     available_difficulties = ["user", "loser", "easy", "medium", "hard"]
@@ -72,10 +74,11 @@ class Player:
             return self.loser_move(game)
         if self.difficulty == "easy":  # Plays randomly.
             return self.easy_move(game)
-        if self.difficulty == "medium":  # Plays a winning move if possible. Otherwise blocks the opposing player's move. Otherwise it plays randomly.
+        if self.difficulty == "medium":  # Plays a winning move if possible or blocks the opposing player's move if it would result in a win. Otherwise it plays randomly.
             return self.medium_move(game)
-        if self.difficulty == "hard":
-            return self.hard_move(game)
+        if self.difficulty == "hard":  # Plays the best move possible, based on the minimax algorithm.
+            MOVE = self.minimax(game, game.next_player)
+            return game.reverse_coords_map[MOVE[0]]
 
     def user_move(self, game):
         while True:
@@ -112,21 +115,6 @@ class Player:
                 return game.reverse_coords_map[i]
         return self.easy_move(game)
 
-    
-    
-    # def hard_move(self, game):
-    #     for i, symbol in enumerate(game.cells):
-    #         if symbol == "_" and self.check_win(game, i):
-    #             for coords, ind in game.coords_map.items():
-    #                 if ind == i:
-    #                     return list(map(str, coords)) 
-    #     other_symbol = "O" if game.next_player == "X" else "X"
-    #     for i, symbol in enumerate(game.cells):
-    #         if symbol == "_" and self.check_win(game, i, other_symbol):
-    #             for coords, ind in game.coords_map.items():
-    #                 if ind == i:
-    #                     return list(map(str, coords)) 
-
     def check_win(self, game, cell_index, symbol=None):
         """Return True if placing symbol in cell_index results in a win, else return False. Symbol defaults to next_player symbol if not specified."""
         if not symbol:
@@ -134,6 +122,33 @@ class Player:
         cells_string = "".join(game.cells[:cell_index] + [symbol] + game.cells[cell_index + 1:])
         straights = [cells_string[:3], cells_string[3:6], cells_string[6:], cells_string[::3], cells_string[1::3], cells_string[2::3], cells_string[::4], cells_string[2:7:2]]
         return "XXX" in straights or "OOO" in straights      
+
+    def minimax(self, game, player_symbol):
+        moves = []
+        for i, symbol in enumerate(game.cells):
+            if symbol == "_":
+                new_game = TicTacToe(game.cells, game.next_player)
+                new_game.execute_move(new_game.reverse_coords_map[i], new_game.next_player)
+                new_game.check_condition()
+                if new_game.state == "Draw":
+                    moves.append((i, 0))
+                elif new_game.state == "X wins":
+                    moves.append((i, 10)) if player_symbol == "X" else moves.append((i, -10))
+                elif new_game.state == "O wins":
+                    moves.append((i, 10)) if player_symbol == "O" else moves.append((i, -10))
+                else:
+                    new_game.switch_player()
+                    moves.append((i, self.minimax(new_game, player_symbol)[1]))
+        best_move = moves[0]
+        if game.next_player == player_symbol:
+            for move in moves:
+                if move[1] > best_move[1]:
+                    best_move = move
+        else:
+            for move in moves:
+                if move[1] < best_move[1]:
+                    best_move = move
+        return best_move
 
 
 def play(game, p1_diff, p2_diff):
